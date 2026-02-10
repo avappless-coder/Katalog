@@ -27,27 +27,32 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
+    const requireVerification =
+      (this.config.get<string>('EMAIL_VERIFICATION_REQUIRED') || 'true') === 'true';
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         passwordHash,
+        emailVerifiedAt: requireVerification ? null : new Date(),
         profile: { create: { displayName: dto.displayName || dto.email.split('@')[0] } },
         privacy: { create: {} }
       }
     });
 
-    const token = this.generateRandomToken();
-    await this.prisma.emailVerificationToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: this.hashToken(token),
-        expiresAt: this.addHours(24)
-      }
-    });
+    if (requireVerification) {
+      const token = this.generateRandomToken();
+      await this.prisma.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: this.hashToken(token),
+          expiresAt: this.addHours(24)
+        }
+      });
 
-    await this.mailer.sendEmailVerification(user.email, token);
+      await this.mailer.sendEmailVerification(user.email, token);
+    }
 
-    return { id: user.id, email: user.email };
+    return { id: user.id, email: user.email, emailVerificationRequired: requireVerification };
   }
 
   async verifyEmail(token: string) {
@@ -73,7 +78,10 @@ export class AuthService {
 
   async login(dto: LoginDto, res: Response) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user || !user.emailVerifiedAt || user.status !== 'ACTIVE') {
+    const requireVerification =
+      (this.config.get<string>('EMAIL_VERIFICATION_REQUIRED') || 'true') === 'true';
+
+    if (!user || (requireVerification && !user.emailVerifiedAt) || user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Invalid credentials');
     }
 
