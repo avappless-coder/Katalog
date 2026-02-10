@@ -1,0 +1,450 @@
+﻿// Prisma schema for Katalog
+// PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum Visibility {
+  PUBLIC
+  FRIENDS_ONLY
+  PRIVATE
+}
+
+enum WorkType {
+  BOOK
+  MANGA
+  MANHWA
+}
+
+enum LibraryStatus {
+  COMPLETED
+  READING
+  DROPPED
+  PLANNED
+  ON_HOLD
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+enum GenreRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum AchievementRuleType {
+  BOOKS_COMPLETED_COUNT
+  GENRE_COMPLETED_COUNT
+  WORK_COMPLETED
+}
+
+enum ImportProvider {
+  OTHER
+}
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String
+  status          UserStatus    @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  profile         Profile?
+  privacy         PrivacySettings?
+  roles           UserRole[]
+  refreshTokens   RefreshToken[]
+  emailTokens     EmailVerificationToken[]
+  resetTokens     PasswordResetToken[]
+
+  library         UserLibraryItem[]
+  readingLogs     ReadingLog[]
+  quotes          UserQuote[]
+  globalQuotes    GlobalQuote[] @relation("GlobalQuoteCreatedBy")
+  quoteLikes      QuoteLike[]
+
+  sentRequests    Friendship[]  @relation("FriendshipRequester")
+  receivedRequests Friendship[] @relation("FriendshipAddressee")
+
+  achievements    UserAchievement[]
+  genreRequests   GenreRequest[]
+  reports         Report[]      @relation("ReportReporter")
+  reviewedReports Report[]      @relation("ReportReviewer")
+  reviewedGenres  GenreRequest[] @relation("GenreRequestReviewer")
+
+  externalAccounts ExternalAccount[]
+  importJobs       ImportJob[]
+}
+
+model Profile {
+  userId      String  @id
+  displayName String
+  avatarUrl   String?
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PrivacySettings {
+  userId             String @id
+  profileVisibility  Visibility @default(PUBLIC)
+  libraryVisibility  Visibility @default(FRIENDS_ONLY)
+  quotesVisibility   Visibility @default(FRIENDS_ONLY)
+  activityVisibility Visibility @default(FRIENDS_ONLY)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user               User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Role {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String @id @default(uuid())
+  key         String @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roles       RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId String
+  permissionId String
+  createdAt DateTime @default(now())
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String
+  tokenHash   String   @unique
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  replacedByTokenId String?
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Author {
+  id        String @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  works     WorkAuthor[]
+
+  @@index([name])
+}
+
+model Work {
+  id           String @id @default(uuid())
+  title        String
+  description  String?
+  type         WorkType
+  totalPages   Int?
+  totalChapters Int?
+  releaseYear  Int?
+  language     String?
+  coverUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  authors      WorkAuthor[]
+  genres       WorkGenre[]
+  libraryItems UserLibraryItem[]
+  quotes       UserQuote[]
+  globalQuotes GlobalQuote[]
+
+  @@index([title])
+  @@index([type])
+}
+
+model WorkAuthor {
+  workId   String
+  authorId String
+
+  work     Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@id([workId, authorId])
+}
+
+model Genre {
+  id        String @id @default(uuid())
+  name      String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  works     WorkGenre[]
+}
+
+model WorkGenre {
+  workId  String
+  genreId String
+
+  work   Work  @relation(fields: [workId], references: [id], onDelete: Cascade)
+  genre  Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([workId, genreId])
+}
+
+model UserLibraryItem {
+  userId        String
+  workId        String
+  status        LibraryStatus
+  progressPages Int @default(0)
+  progressChapters Int @default(0)
+  rating        Int?
+  notes         String?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work          Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+  readingLogs   ReadingLog[]
+
+  @@id([userId, workId])
+  @@index([status])
+}
+
+model ReadingLog {
+  id          String @id @default(uuid())
+  userId      String
+  workId      String
+  date        DateTime
+  pagesRead   Int @default(0)
+  chaptersRead Int @default(0)
+  createdAt   DateTime @default(now())
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work        Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+  libraryItem UserLibraryItem @relation(fields: [userId, workId], references: [userId, workId], onDelete: Cascade)
+
+  @@unique([userId, workId, date])
+  @@index([userId, date])
+}
+
+model UserQuote {
+  id        String @id @default(uuid())
+  userId    String
+  workId    String?
+  text      String
+  author    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work      Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model GlobalQuote {
+  id          String @id @default(uuid())
+  createdById String
+  workId      String?
+  text        String
+  author      String?
+  likesCount  Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User @relation("GlobalQuoteCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  work        Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+  likes       QuoteLike[]
+
+  @@index([likesCount])
+}
+
+model QuoteLike {
+  userId  String
+  quoteId String
+  createdAt DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quote  GlobalQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@id([userId, quoteId])
+}
+
+model Friendship {
+  id          String @id @default(uuid())
+  requesterId String
+  addresseeId String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  respondedAt DateTime?
+
+  requester   User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee   User @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([status])
+}
+
+model Achievement {
+  id          String @id @default(uuid())
+  key         String @unique
+  title       String
+  description String?
+  ruleType    AchievementRuleType
+  ruleData    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  awardedAt     DateTime @default(now())
+
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+}
+
+model GenreRequest {
+  id          String @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  status      GenreRequestStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  reviewedAt  DateTime?
+  reviewedById String?
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy  User? @relation("GenreRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model Report {
+  id           String @id @default(uuid())
+  reporterId   String
+  targetUserId String?
+  targetWorkId String?
+  targetQuoteId String?
+  reason       String
+  details      String?
+  status       ReportStatus @default(OPEN)
+  createdAt    DateTime @default(now())
+  reviewedAt   DateTime?
+  reviewedById String?
+
+  reporter     User @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedBy   User? @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  targetUser   User? @relation(fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetWork   Work? @relation(fields: [targetWorkId], references: [id], onDelete: SetNull)
+  targetQuote  GlobalQuote? @relation(fields: [targetQuoteId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model ExternalAccount {
+  id         String @id @default(uuid())
+  userId     String
+  provider   ImportProvider
+  externalId String
+  createdAt  DateTime @default(now())
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@index([userId])
+}
+
+model ImportJob {
+  id         String @id @default(uuid())
+  userId     String
+  provider   ImportProvider
+  status     String
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+  error      String?
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, provider])
+}
