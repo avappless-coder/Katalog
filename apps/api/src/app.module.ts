@@ -2,7 +2,6 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ThrottlerStorageRedisService } from 'throttler-storage-redis';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -24,15 +23,10 @@ import { QuotesModule } from './quotes/quotes.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, cache: true }),
     ThrottlerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const redisUrl = config.get<string>('REDIS_URL') || 'redis://localhost:6379';
-        return {
-          ttl: 60_000,
-          limit: 120,
-          storage: new ThrottlerStorageRedisService(redisUrl)
-        };
-      }
+      useFactory: () => ({
+        ttl: 60_000,
+        limit: 120
+      })
     }),
     PrismaModule,
     MailerModule,
