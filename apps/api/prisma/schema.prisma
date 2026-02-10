@@ -1,4 +1,4 @@
-﻿// Prisma schema for Katalog
+// Prisma schema for Katalog
 // PostgreSQL
 
 generator client {
