@@ -95,6 +95,7 @@ model User {
   genreRequests   GenreRequest[]
   reports         Report[]      @relation("ReportReporter")
   reviewedReports Report[]      @relation("ReportReviewer")
+  targetedReports Report[]      @relation("ReportTargetUser")
   reviewedGenres  GenreRequest[] @relation("GenreRequestReviewer")
 
   externalAccounts ExternalAccount[]
@@ -228,8 +229,10 @@ model Work {
   authors      WorkAuthor[]
   genres       WorkGenre[]
   libraryItems UserLibraryItem[]
+  readingLogs  ReadingLog[]
   quotes       UserQuote[]
   globalQuotes GlobalQuote[]
+  reports      Report[]
 
   @@index([title])
   @@index([type])
@@ -330,6 +333,7 @@ model GlobalQuote {
   createdBy   User @relation("GlobalQuoteCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
   work        Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
   likes       QuoteLike[]
+  reports     Report[]
 
   @@index([likesCount])
 }
@@ -415,7 +419,7 @@ model Report {
 
   reporter     User @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
   reviewedBy   User? @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  targetUser   User? @relation(fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetUser   User? @relation("ReportTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
   targetWork   Work? @relation(fields: [targetWorkId], references: [id], onDelete: SetNull)
   targetQuote  GlobalQuote? @relation(fields: [targetQuoteId], references: [id], onDelete: SetNull)
 
