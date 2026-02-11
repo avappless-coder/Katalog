@@ -1,4 +1,4 @@
-﻿import { api } from '../../lib/api';
+﻿import { apiSafe } from '../../lib/api';
 
 type Friend = {
   id: string;
@@ -12,11 +12,11 @@ type FriendRequest = {
 };
 
 async function getFriends() {
-  return api<Friend[]>('/friends');
+  return apiSafe<Friend[]>('/friends', []);
 }
 
 async function getRequests() {
-  return api<FriendRequest[]>('/friends/requests');
+  return apiSafe<FriendRequest[]>('/friends/requests', []);
 }
 
 export default async function FriendsPage() {

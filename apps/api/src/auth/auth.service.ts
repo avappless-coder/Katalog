@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+﻿import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
@@ -21,68 +21,40 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const username = dto.username.trim().toLowerCase();
+    const existing = await this.prisma.user.findFirst({ where: { username } });
     if (existing) {
-      throw new UnauthorizedException('Email already registered');
+      throw new UnauthorizedException('Username already registered');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    const requireVerification =
-      (this.config.get<string>('EMAIL_VERIFICATION_REQUIRED') || 'true') === 'true';
-    const fallbackName = dto.email.split('@')[0] ?? dto.email;
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        username,
+        email: this.buildSyntheticEmail(username),
         passwordHash,
-        emailVerifiedAt: requireVerification ? null : new Date(),
-        profile: { create: { displayName: dto.displayName || fallbackName } },
+        emailVerifiedAt: new Date(),
+        profile: { create: { displayName: dto.username } },
         privacy: { create: {} }
       }
     });
 
-    if (requireVerification) {
-      const token = this.generateRandomToken();
-      await this.prisma.emailVerificationToken.create({
-        data: {
-          userId: user.id,
-          tokenHash: this.hashToken(token),
-          expiresAt: this.addHours(24)
-        }
-      });
-
-      await this.mailer.sendEmailVerification(user.email, token);
-    }
-
-    return { id: user.id, email: user.email, emailVerificationRequired: requireVerification };
+    return {
+      id: user.id,
+      username: user.username,
+      emailVerificationRequired: false
+    };
   }
 
-  async verifyEmail(token: string) {
-    const tokenHash = this.hashToken(token);
-    const record = await this.prisma.emailVerificationToken.findFirst({
-      where: { tokenHash, usedAt: null, expiresAt: { gt: new Date() } }
-    });
-    if (!record) throw new UnauthorizedException('Invalid token');
-
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: record.userId },
-        data: { emailVerifiedAt: new Date() }
-      }),
-      this.prisma.emailVerificationToken.update({
-        where: { id: record.id },
-        data: { usedAt: new Date() }
-      })
-    ]);
-
+  async verifyEmail(_token: string) {
     return { ok: true };
   }
 
   async login(dto: LoginDto, res: Response) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    const requireVerification =
-      (this.config.get<string>('EMAIL_VERIFICATION_REQUIRED') || 'true') === 'true';
+    const username = dto.username.trim().toLowerCase();
+    const user = await this.prisma.user.findFirst({ where: { username } });
 
-    if (!user || (requireVerification && !user.emailVerifiedAt) || user.status !== 'ACTIVE') {
+    if (!user || user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -93,7 +65,7 @@ export class AuthService {
 
     this.setAuthCookies(res, accessToken, refreshToken);
 
-    return { id: user.id, email: user.email, refreshTokenId };
+    return { id: user.id, username: user.username, refreshTokenId };
   }
 
   async refresh(req: Request, res: Response) {
@@ -252,5 +224,10 @@ export class AuthService {
 
   private addDays(days: number) {
     return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  }
+
+  private buildSyntheticEmail(username: string) {
+    const hash = crypto.createHash('sha256').update(username).digest('hex').slice(0, 24);
+    return `${hash}@katalog.local`;
   }
 }

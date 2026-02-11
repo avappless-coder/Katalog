@@ -27,3 +27,15 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
+
+export async function apiSafe<T>(
+  path: string,
+  fallback: T,
+  options: ApiOptions = {}
+): Promise<T> {
+  try {
+    return await api<T>(path, options);
+  } catch {
+    return fallback;
+  }
+}

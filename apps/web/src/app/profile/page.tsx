@@ -3,6 +3,7 @@ import { ActivityHeatmap } from '../../components/ActivityHeatmap';
 
 type Me = {
   id: string;
+  username?: string | null;
   email: string;
   profile?: { displayName?: string | null; avatarUrl?: string | null; bio?: string | null } | null;
 };
@@ -30,7 +31,7 @@ export default async function ProfilePage() {
       <section className="profile-card">
         <div className="profile-card__avatar" />
         <div className="profile-card__info">
-          <div className="profile-card__name">{me.profile?.displayName || me.email}</div>
+          <div className="profile-card__name">{me.profile?.displayName || me.username || me.email}</div>
           <div className="profile-card__meta">Читает и коллекционирует манхву</div>
           <p className="profile-card__bio">
             {me.profile?.bio || 'Добавьте описание профиля в настройках.'}

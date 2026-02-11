@@ -4,9 +4,8 @@ import { useState } from 'react';
 import { api } from '../../lib/api';
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,7 +17,7 @@ export default function RegisterPage() {
     try {
       await api('/auth/register', {
         method: 'POST',
-        body: { email, password, displayName: displayName || undefined }
+        body: { username, password }
       });
       setSuccess(true);
     } catch (err: any) {
@@ -33,29 +32,18 @@ export default function RegisterPage() {
       <section className="auth-card">
         <div className="auth-header">
           <div className="panel__title">Регистрация</div>
-          <div className="panel__subtitle">Подтвердите email, чтобы активировать аккаунт</div>
+          <div className="panel__subtitle">Создайте аккаунт по нику и паролю</div>
         </div>
         {success ? (
-          <div className="auth-success">
-            Мы отправили письмо для подтверждения email. Проверьте почту.
-          </div>
+          <div className="auth-success">Аккаунт создан. Можно входить.</div>
         ) : (
           <form className="auth-form" onSubmit={submit}>
             <label className="field">
-              <span>Имя (необязательно)</span>
+              <span>Ник</span>
               <input
                 className="input"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </label>
-            <label className="field">
-              <span>Email</span>
-              <input
-                className="input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </label>

@@ -16,6 +16,7 @@ export class UsersService {
 
     return {
       id: user.id,
+      username: user.username,
       email: user.email,
       emailVerifiedAt: user.emailVerifiedAt,
       status: user.status,
@@ -32,7 +33,7 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    const fallbackName = user.email.split('@')[0] ?? user.email;
+    const fallbackName = user.username ?? user.email.split('@')[0] ?? user.email;
     const displayName = dto.displayName ?? user.profile?.displayName ?? fallbackName;
 
     const profile = await this.prisma.profile.upsert({

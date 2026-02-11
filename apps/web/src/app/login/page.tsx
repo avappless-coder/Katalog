@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { api } from '../../lib/api';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export default function LoginPage() {
     try {
       await api('/auth/login', {
         method: 'POST',
-        body: { email, password }
+        body: { username, password }
       });
       window.location.href = '/';
     } catch (err: any) {
@@ -31,16 +31,15 @@ export default function LoginPage() {
       <section className="auth-card">
         <div className="auth-header">
           <div className="panel__title">Вход</div>
-          <div className="panel__subtitle">Используйте email для авторизации</div>
+          <div className="panel__subtitle">Войдите по нику и паролю</div>
         </div>
         <form className="auth-form" onSubmit={submit}>
           <label className="field">
-            <span>Email</span>
+            <span>Ник</span>
             <input
               className="input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </label>
@@ -60,7 +59,6 @@ export default function LoginPage() {
           </button>
         </form>
         <div className="auth-footer">
-          <a href="/forgot-password">Забыли пароль?</a>
           <a href="/register">Создать аккаунт</a>
         </div>
       </section>
