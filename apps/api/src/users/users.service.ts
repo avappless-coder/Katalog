@@ -32,8 +32,8 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    const displayName =
-      dto.displayName ?? user.profile?.displayName ?? user.email.split('@')[0];
+    const fallbackName = user.email.split('@')[0] ?? user.email;
+    const displayName = dto.displayName ?? user.profile?.displayName ?? fallbackName;
 
     const profile = await this.prisma.profile.upsert({
       where: { userId },

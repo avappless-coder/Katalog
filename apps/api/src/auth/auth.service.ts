@@ -29,12 +29,13 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const requireVerification =
       (this.config.get<string>('EMAIL_VERIFICATION_REQUIRED') || 'true') === 'true';
+    const fallbackName = dto.email.split('@')[0] ?? dto.email;
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         passwordHash,
         emailVerifiedAt: requireVerification ? null : new Date(),
-        profile: { create: { displayName: dto.displayName || dto.email.split('@')[0] } },
+        profile: { create: { displayName: dto.displayName || fallbackName } },
         privacy: { create: {} }
       }
     });
