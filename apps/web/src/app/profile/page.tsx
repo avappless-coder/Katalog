@@ -1,4 +1,4 @@
-﻿import { api } from '../../lib/api';
+﻿import { apiSafe } from '../../lib/api';
 import { ActivityHeatmap } from '../../components/ActivityHeatmap';
 
 type Me = {
@@ -9,7 +9,7 @@ type Me = {
 };
 
 async function getMe() {
-  return api<Me>('/users/me');
+  return apiSafe<Me>('/users/me', { id: 'guest', username: 'guest', email: 'guest@local', profile: null });
 }
 
 const demo = [

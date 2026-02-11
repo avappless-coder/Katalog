@@ -181,28 +181,32 @@ export class AuthService {
   }
 
   private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
-    const domain = this.config.get<string>('COOKIE_DOMAIN') || 'localhost';
+    const domain = this.config.get<string>('COOKIE_DOMAIN');
     const secure = this.config.get<string>('COOKIE_SECURE') === 'true';
+    const sameSite = secure ? 'none' : 'lax';
 
-    res.cookie('access_token', accessToken, {
+    const baseCookieOptions = {
       httpOnly: true,
       secure,
-      sameSite: 'lax',
-      domain
+      sameSite
+    } as const;
+
+    res.cookie('access_token', accessToken, {
+      ...baseCookieOptions,
+      ...(domain ? { domain } : {})
     });
 
     res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure,
-      sameSite: 'lax',
-      domain
+      ...baseCookieOptions,
+      ...(domain ? { domain } : {})
     });
   }
 
   private clearAuthCookies(res: Response) {
-    const domain = this.config.get<string>('COOKIE_DOMAIN') || 'localhost';
-    res.clearCookie('access_token', { domain });
-    res.clearCookie('refresh_token', { domain });
+    const domain = this.config.get<string>('COOKIE_DOMAIN');
+    const clearOptions = domain ? { domain } : undefined;
+    res.clearCookie('access_token', clearOptions);
+    res.clearCookie('refresh_token', clearOptions);
   }
 
   private extractCookieToken(req: Request, name: string): string | null {

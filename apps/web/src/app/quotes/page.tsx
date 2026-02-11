@@ -1,4 +1,4 @@
-﻿import { api } from '../../lib/api';
+﻿import { apiSafe } from '../../lib/api';
 
 type Quote = {
   id: string;
@@ -15,11 +15,11 @@ type UserQuote = {
 };
 
 async function getTopQuotes() {
-  return api<Quote[]>('/quotes/global?sort=top');
+  return apiSafe<Quote[]>('/quotes/global?sort=top', []);
 }
 
 async function getMyQuotes() {
-  return api<UserQuote[]>('/quotes/me');
+  return apiSafe<UserQuote[]>('/quotes/me', []);
 }
 
 export default async function QuotesPage() {
@@ -50,7 +50,7 @@ export default async function QuotesPage() {
           <div className="panel__body quotes-list">
             {topQuotes.map((quote) => (
               <article key={quote.id} className="quote-card">
-                <p className="quote-card__text">“{quote.text}”</p>
+                <p className="quote-card__text">"{quote.text}"</p>
                 <div className="quote-card__meta">
                   <span>{quote.author || '—'}</span>
                   <button className="like-btn">♥ {quote.likesCount}</button>
@@ -71,7 +71,7 @@ export default async function QuotesPage() {
           <div className="panel__body quotes-list">
             {myQuotes.map((quote) => (
               <article key={quote.id} className="quote-card">
-                <p className="quote-card__text">“{quote.text}”</p>
+                <p className="quote-card__text">"{quote.text}"</p>
                 <div className="quote-card__meta">
                   <span>{quote.author || '—'}</span>
                   <div className="quote-card__actions">

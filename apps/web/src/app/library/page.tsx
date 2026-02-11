@@ -1,4 +1,4 @@
-﻿import { api } from '../../lib/api';
+﻿import { apiSafe } from '../../lib/api';
 
 type LibraryItem = {
   workId: string;
@@ -16,17 +16,9 @@ type LibraryItem = {
 };
 
 const filters = ['Все', 'Читаю', 'Прочитано', 'В планах', 'Бросил', 'Отложено'];
-const statusMap: Record<string, string | undefined> = {
-  'Все': undefined,
-  'Читаю': 'READING',
-  'Прочитано': 'COMPLETED',
-  'В планах': 'PLANNED',
-  'Бросил': 'DROPPED',
-  'Отложено': 'ON_HOLD'
-};
 
 async function getLibrary(status?: string) {
-  return api<LibraryItem[]>(`/library${status ? `?status=${status}` : ''}`);
+  return apiSafe<LibraryItem[]>(`/library${status ? `?status=${status}` : ''}`, []);
 }
 
 export default async function LibraryPage() {
