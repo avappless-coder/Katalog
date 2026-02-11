@@ -9,7 +9,10 @@ type Me = {
 };
 
 async function getMe() {
-  return apiSafe<Me>('/users/me', { id: 'guest', username: 'guest', email: 'guest@local', profile: null });
+  const fallback: Me = { id: 'guest', username: 'guest', email: 'guest@local', profile: null };
+  const data = await apiSafe<unknown>('/users/me', fallback);
+  if (!data || typeof data !== 'object') return fallback;
+  return data as Me;
 }
 
 const demo = [

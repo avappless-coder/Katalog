@@ -11,5 +11,7 @@ export const navItems: NavItem[] = [
   { label: 'Друзья', href: '/friends' },
   { label: 'Настройки аккаунта', href: '/settings' },
   { label: 'Цитаты', href: '/quotes' },
+  { label: 'Вход', href: '/login' },
+  { label: 'Регистрация', href: '/register' },
   { label: 'Админ', href: '/admin', badge: 'NEW' }
 ];

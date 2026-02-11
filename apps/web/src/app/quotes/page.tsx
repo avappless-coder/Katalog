@@ -15,11 +15,13 @@ type UserQuote = {
 };
 
 async function getTopQuotes() {
-  return apiSafe<Quote[]>('/quotes/global?sort=top', []);
+  const data = await apiSafe<unknown>('/quotes/global?sort=top', []);
+  return Array.isArray(data) ? (data as Quote[]) : [];
 }
 
 async function getMyQuotes() {
-  return apiSafe<UserQuote[]>('/quotes/me', []);
+  const data = await apiSafe<unknown>('/quotes/me', []);
+  return Array.isArray(data) ? (data as UserQuote[]) : [];
 }
 
 export default async function QuotesPage() {

@@ -5,7 +5,6 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailerService } from '../mailer/mailer.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
@@ -16,8 +15,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
-    private readonly config: ConfigService,
-    private readonly mailer: MailerService
+    private readonly config: ConfigService
   ) {}
 
   async register(dto: RegisterDto) {
@@ -104,7 +102,8 @@ export class AuthService {
   }
 
   async requestPasswordReset(dto: RequestPasswordResetDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const username = dto.username.trim().toLowerCase();
+    const user = await this.prisma.user.findFirst({ where: { username } });
     if (user) {
       const token = this.generateRandomToken();
       await this.prisma.passwordResetToken.create({
@@ -114,8 +113,6 @@ export class AuthService {
           expiresAt: this.addHours(2)
         }
       });
-
-      await this.mailer.sendPasswordReset(user.email, token);
     }
 
     return { ok: true };

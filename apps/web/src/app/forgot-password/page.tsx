@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { api } from '../../lib/api';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError(null);
     try {
-      await api('/auth/request-password-reset', { method: 'POST', body: { email } });
+      await api('/auth/request-password-reset', { method: 'POST', body: { username } });
       setDone(true);
     } catch (err: any) {
       setError(err.message || 'Ошибка запроса');
@@ -24,24 +24,23 @@ export default function ForgotPasswordPage() {
       <section className="auth-card">
         <div className="auth-header">
           <div className="panel__title">Восстановление пароля</div>
-          <div className="panel__subtitle">Мы отправим ссылку на email</div>
+          <div className="panel__subtitle">Введите ник, чтобы создать токен сброса</div>
         </div>
         {done ? (
-          <div className="auth-success">Проверьте почту, если email зарегистрирован.</div>
+          <div className="auth-success">Если пользователь существует, токен создан.</div>
         ) : (
           <form className="auth-form" onSubmit={submit}>
             <label className="field">
-              <span>Email</span>
+              <span>Ник</span>
               <input
                 className="input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </label>
             {error ? <div className="auth-error">{error}</div> : null}
-            <button className="primary-btn">Отправить ссылку</button>
+            <button className="primary-btn">Создать токен</button>
           </form>
         )}
       </section>

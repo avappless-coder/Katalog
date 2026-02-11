@@ -18,7 +18,8 @@ type LibraryItem = {
 const filters = ['Все', 'Читаю', 'Прочитано', 'В планах', 'Бросил', 'Отложено'];
 
 async function getLibrary(status?: string) {
-  return apiSafe<LibraryItem[]>(`/library${status ? `?status=${status}` : ''}`, []);
+  const data = await apiSafe<unknown>(`/library${status ? `?status=${status}` : ''}`, []);
+  return Array.isArray(data) ? (data as LibraryItem[]) : [];
 }
 
 export default async function LibraryPage() {
