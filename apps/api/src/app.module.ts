@@ -1,5 +1,5 @@
-﻿import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -22,12 +22,10 @@ import { QuotesModule } from './quotes/quotes.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, cache: true }),
-    ThrottlerModule.forRootAsync({
-      useFactory: () => ({
-        ttl: 60_000,
-        limit: 120
-      })
-    }),
+    ThrottlerModule.forRoot([{
+      ttl: 60_000,
+      limit: 120
+    }]),
     PrismaModule,
     MailerModule,
     AuthModule,

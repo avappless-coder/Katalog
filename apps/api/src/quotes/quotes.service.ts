@@ -1,4 +1,5 @@
-﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserQuoteDto } from './dto/create-user-quote.dto';
 import { UpdateUserQuoteDto } from './dto/update-user-quote.dto';
@@ -9,10 +10,16 @@ export class QuotesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listGlobal(sort?: string) {
-    const orderBy = sort === 'latest' ? { createdAt: 'desc' } : { likesCount: 'desc' };
+    const orderBy: Prisma.GlobalQuoteOrderByWithRelationInput =
+      sort === 'latest' ? { createdAt: 'desc' } : { likesCount: 'desc' };
+
+    const include = {
+      work: true,
+      createdBy: { include: { profile: true } }
+    } satisfies Prisma.GlobalQuoteInclude;
 
     const quotes = await this.prisma.globalQuote.findMany({
-      include: { work: true, createdBy: { include: { profile: true } } },
+      include,
       orderBy
     });
 
